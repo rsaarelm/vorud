@@ -1,13 +1,13 @@
 V = "aeiou"
 C = "bdfgjkmnprstvz"
 
-def vorud_chunk(a):
-    assert(a >= 0 and a < 2**16)
-    a, c5 = divmod(a, len(C))
-    a, v4 = divmod(a, len(V))
-    a, c3 = divmod(a, len(C))
-    a, v2 = divmod(a, len(V))
-    a, c1 = divmod(a, len(C))
+def vorud_chunk(u16):
+    assert(u16 >= 0 and u16 < 2**16)
+    u16, c5 = divmod(u16, len(C))
+    u16, v4 = divmod(u16, len(V))
+    u16, c3 = divmod(u16, len(C))
+    u16, v2 = divmod(u16, len(V))
+    u16, c1 = divmod(u16, len(C))
     return C[c1] + V[v2] + C[c3] + V[v4] + C[c5]
 
 def find_v(v): ret = V.find(v); assert(ret >= 0); return ret
@@ -26,7 +26,7 @@ def durov_chunk(s):
     return ret
 
 def vorud(a):
-    assert(a > 0)
+    assert(a >= 0)
     if a < 2**16:
         return vorud_chunk(a)
     else:
@@ -35,5 +35,11 @@ def vorud(a):
 def durov(s):
     if len(s) < 6:
         assert(len(s) == 5)
-        return durov_chunk(s)
+        ret = durov_chunk(s)
+        assert(ret < 2**16)
+        return ret
     return durov_chunk(s[-5:]) + 2**16 * durov(s[:-6])
+
+if __name__ == '__main__':
+    for i in range(2**16):
+        assert(durov(vorud(i)) == i)
