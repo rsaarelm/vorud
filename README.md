@@ -13,12 +13,3 @@ encoding](http://wiki.yak.net/589/Bubble_Babble_Encoding.txt). Vorud
 is simpler to implement and optimized for short values. Vorud
 encodes 32-bit values in two words when Bubble Babble requires
 three.
-
-## Todo
-
-* Vorud would make a nicer stream encoder if it could handle any
-  number of bytes, not just 16-bit chunks. Vorud chunks encode a
-  68600 element space, which leaves 3064 non-encoding values that
-  can be used for special purposes. A simple enhancement would be to
-  use the first 256 values above 65535 to denote "first byte has
-  this value, stream ends after first byte".

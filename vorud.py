@@ -1,13 +1,15 @@
+import struct
+
 V = "aeiou"
 C = "bdfgjkmnprstvz"
 
-def vorud_chunk(u16):
-    assert(u16 >= 0 and u16 < 2**16)
-    u16, c5 = divmod(u16, len(C))
-    u16, v4 = divmod(u16, len(V))
-    u16, c3 = divmod(u16, len(C))
-    u16, v2 = divmod(u16, len(V))
-    u16, c1 = divmod(u16, len(C))
+def vorud_chunk(x):
+    assert(x >= 0 and x < len(V)**2 * len(C)**3)
+    x, c5 = divmod(x, len(C))
+    x, v4 = divmod(x, len(V))
+    x, c3 = divmod(x, len(C))
+    x, v2 = divmod(x, len(V))
+    x, c1 = divmod(x, len(C))
     return C[c1] + V[v2] + C[c3] + V[v4] + C[c5]
 
 def find_v(v): ret = V.find(v); assert(ret >= 0); return ret
@@ -16,30 +18,63 @@ def find_c(c): ret = C.find(c); assert(ret >= 0); return ret
 
 def durov_chunk(s):
     assert(len(s) == 5)
-    ret, n = 0, 1
-    ret += find_c(s[4]) * n; n *= len(C)
-    ret += find_v(s[3]) * n; n *= len(V)
-    ret += find_c(s[2]) * n; n *= len(C)
-    ret += find_v(s[1]) * n; n *= len(V)
-    ret += find_c(s[0]) * n
+    x, n = 0, 1
+    x += find_c(s[4]) * n; n *= len(C)
+    x += find_v(s[3]) * n; n *= len(V)
+    x += find_c(s[2]) * n; n *= len(C)
+    x += find_v(s[1]) * n; n *= len(V)
+    x += find_c(s[0]) * n
+    return x
 
-    return ret
+def is_valid_chunk(s):
+    return len(s) == 5 and C.find(s[0]) >= 0 and V.find(s[1]) >= 0 \
+        and C.find(s[2]) >= 0 and V.find(s[3]) >= 0 and C.find(s[4]) >= 0
 
-def vorud(a):
-    assert(a >= 0)
-    if a < 2**16:
-        return vorud_chunk(a)
-    else:
-        return "%s-%s" % (vorud(a // 2**16), vorud_chunk(a % 2**16))
+def vorud(b):
+    """Encode bytes-like data to a Vorud string."""
+    ret = []
+    while True:
+        if len(b) == 0: return "-".join(ret)
+        if len(b) == 1:
+            # Stream ends after 1 byte, do special encoding in the chunk.
+            ret.append(vorud_chunk(2**16 + b[0]))
+        else:
+            ret.append(vorud_chunk(b[0] * 256 + b[1]))
+        b = b[2:]
+
 
 def durov(s):
-    if len(s) < 6:
-        assert(len(s) == 5)
-        ret = durov_chunk(s)
-        assert(ret < 2**16)
-        return ret
-    return durov_chunk(s[-5:]) + 2**16 * durov(s[:-6])
+    """Decode a Vorud string into bytes."""
+    ret = []
+    stream_ended = False
+    while True:
+        if len(s) == 0: return bytes(ret)
+        if stream_ended: raise TypeError("Vorud data after stream end marker")
+        chunk = s[:5].lower()
+        if not is_valid_chunk(chunk):
+            raise TypeError("Invalid Vorud chunk: '%s'" % chunk)
+        val = durov_chunk(chunk)
+        if val < 2**16:
+            # Regular two-byte chunk.
+            ret.append(val // 256)
+            ret.append(val % 256)
+        elif val < 2**16 + 256:
+            # Single byte at data end.
+            stream_ended = True
+            ret.append(val - 2**16)
+        else:
+            raise TypeError("Unused Vorud encoding: '%x'" % val)
+        s = s[6:]
+
+def vorud_32(i):
+    """Standard big-endian encoding for 32-bit integers"""
+    b = struct.pack(">I", i)
+    return vorud(b)
+
+def durov_32(s):
+    """Standard big-endian decoding for 32-bit integers"""
+    return struct.unpack(">I", durov(s))[0]
 
 if __name__ == '__main__':
     for i in range(2**16):
-        assert(durov(vorud(i)) == i)
+        assert(durov_32(vorud_32(i)) == i)
