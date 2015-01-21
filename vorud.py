@@ -1,3 +1,4 @@
+import unittest
 import struct
 
 V = "aeiou"
@@ -75,6 +76,23 @@ def durov_32(s):
     """Standard big-endian decoding for 32-bit integers"""
     return struct.unpack(">I", durov(s))[0]
 
+class TestVorud(unittest.TestCase):
+    def test_specific(self):
+        self.assertEqual(durov(""), b"")
+        self.assertEqual(durov("vorud"), bytes([0xf3, 0xdb]))
+        self.assertEqual(durov("VORUD"), bytes([0xf3, 0xdb]))
+        self.assertEqual(durov("zevik"), bytes([0x11]))
+        self.assertEqual(vorud_32(3878844299), "vakip-megaz")
+
+    def test_fails(self):
+        self.assertRaises(TypeError, durov, "smeg")
+        self.assertRaises(TypeError, durov, "zeveg-babab") # Stuff after one-byte chunk
+        self.assertRaises(TypeError, durov, "ziduz") # Uncoded value
+
+    def test_intenc(self):
+        step_to_make_it_go_faster = 137
+        for i in range(0, 2**16, step_to_make_it_go_faster):
+            self.assertEqual(durov_32(vorud_32(i)), i)
+
 if __name__ == '__main__':
-    for i in range(2**16):
-        assert(durov_32(vorud_32(i)) == i)
+    unittest.main()
