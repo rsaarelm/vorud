@@ -13,3 +13,7 @@ encoding](http://wiki.yak.net/589/Bubble_Babble_Encoding.txt). Vorud
 is simpler to implement and optimized for short values. Vorud
 encodes 32-bit values in two words when Bubble Babble requires
 three.
+
+(2015-12 update: Turns out [Proquint](http://arxiv.org/html/0901.4016)
+has the same bits to words density as Vorud and a simpler encoding
+scheme. You should probably just use that instead of Vorud.)
